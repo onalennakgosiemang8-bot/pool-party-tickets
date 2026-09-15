@@ -70,7 +70,6 @@ export async function buildTicketPdf(ticket: {
     size: 11,
     font: bold,
     color: GOLD,
-    characterSpacing: 5,
   });
   page.drawText('SPLASH WATER PARK', { x: 34, y: H - 86, size: 24, font: bold, color: WHITE });
   page.drawText('PARTY', { x: 34, y: H - 112, size: 24, font: bold, color: AQUA });
@@ -84,7 +83,7 @@ export async function buildTicketPdf(ticket: {
   });
 
   const field = (label: string, value: string, x: number, y: number, size = 12) => {
-    page.drawText(label, { x, y: y + 15, size: 7, font: regular, color: AQUA, characterSpacing: 1.6 });
+    page.drawText(label, { x, y: y + 15, size: 7, font: regular, color: AQUA, });
     page.drawText(value, { x, y, size, font: bold, color: WHITE });
   };
 
@@ -104,7 +103,7 @@ export async function buildTicketPdf(ticket: {
 
   // ── Right stub ──
   const stubX = panelW + 24;
-  page.drawText('TICKET', { x: stubX, y: H - 44, size: 7, font: regular, color: AQUA, characterSpacing: 1.6 });
+  page.drawText('TICKET', { x: stubX, y: H - 44, size: 7, font: regular, color: AQUA, });
   page.drawText(`#${ticket.ticketNumber}`, { x: stubX, y: H - 62, size: 15, font: bold, color: GOLD });
 
   const qrPng = await qrPngBuffer(ticket.qrPayload, 420);
@@ -126,7 +125,6 @@ export async function buildTicketPdf(ticket: {
     size: 11,
     font: bold,
     color: POOL,
-    characterSpacing: 2,
   });
   page.drawText('Scan at the gate · One ticket, one guest', {
     x: stubX,
@@ -142,7 +140,6 @@ export async function buildTicketPdf(ticket: {
     size: 7,
     font: regular,
     color: OCEAN,
-    characterSpacing: 2.4,
   });
 
   const bytes = await doc.save();

@@ -213,12 +213,12 @@ export async function reserveSeat(input: ReserveInput) {
 /** Releases a seat when payment fails, is cancelled, or the hold lapses. */
 export async function releaseSeat(
   ticketId: string,
-  status: TicketStatus.FAILED | TicketStatus.EXPIRED | TicketStatus.CANCELLED,
+  status: "FAILED" | "EXPIRED" | "CANCELLED",
   reason?: string,
 ) {
   return prisma.ticket.updateMany({
     // Guard: never demote a ticket that is already CONFIRMED.
-    where: { id: ticketId, status: TicketStatus.PENDING },
+    where: { id: ticketId, status: "PENDING" },
     data: { status, reservedUntil: null, cancelledAt: new Date(), cancelReason: reason },
   });
 }
