@@ -1,0 +1,218 @@
+// The Parks Splash Water Park Party — data model (PostgreSQL + Prisma)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// A single Event row holds the authoritative capacity + ticket counter.
+// Every seat allocation locks this row (SELECT ... FOR UPDATE), which is
+// what makes the 55-guest cap race-proof.
+model Event {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  tagline       String?
+  venue         String
+  startsAt      DateTime
+  endsAt        DateTime
+  priceCents    Int      @default(15000)
+  currency      String   @default("ZAR")
+  capacity      Int      @default(55)
+  lastTicketSeq Int      @default(0)
+  inviteOnly    Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tickets Ticket[]
+}
+
+enum TicketStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+  FAILED
+}
+
+enum PaymentStatus {
+  AWAITING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+model Guest {
+  id               String   @id @default(cuid())
+  fullName         String
+  email            String   @unique
+  phone            String
+  emergencyContact String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tickets Ticket[]
+
+  @@index([fullName])
+}
+
+model Ticket {
+  id           String @id @default(cuid())
+  ticketNumber String @unique
+  eventId      String
+  guestId      String
+
+  guestName        String
+  email            String
+  phone            String
+  emergencyContact String?
+
+  amountCents   Int
+  currency      String       @default("ZAR")
+  status        TicketStatus @default(PENDING)
+  reservedUntil DateTime?
+
+  qrToken     String @unique
+  qrSignature String
+
+  checkedIn   Boolean   @default(false)
+  checkedInAt DateTime?
+
+  confirmedAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event    Event      @relation(fields: [eventId], references: [id])
+  guest    Guest      @relation(fields: [guestId], references: [id])
+  payments Payment[]
+  checkins CheckIn[]
+  emails   EmailLog[]
+
+  @@index([eventId, status])
+  @@index([status, reservedUntil])
+  @@index([email])
+  @@index([createdAt])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  ticketId      String
+  provider      String        @default("payfast")
+  transactionId String?
+  merchantRef   String        @unique
+  amountCents   Int
+  currency      String        @default("ZAR")
+  status        PaymentStatus @default(AWAITING)
+  rawPayload    Json?
+  failureReason String?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, transactionId])
+  @@index([ticketId])
+  @@index([status])
+}
+
+model CheckIn {
+  id          String   @id @default(cuid())
+  ticketId    String   @unique
+  checkedInAt DateTime @default(now())
+  checkedInBy String
+  method      String   @default("qr")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([checkedInAt])
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         String    @default("organizer")
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sessions AdminSession[]
+}
+
+model AdminSession {
+  id        String    @id @default(cuid())
+  adminId   String
+  tokenHash String    @unique
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([expiresAt])
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  ticketId  String?
+  to        String
+  template  String
+  subject   String
+  status    String   @default("queued")
+  error     String?
+  createdAt DateTime @default(now())
+
+  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  provider    String
+  externalId  String
+  signature   String?
+  payload     Json
+  processedAt DateTime?
+  result      String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([provider, externalId])
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  count     Int      @default(0)
+  windowEnd DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([windowEnd])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actorName String?
+  action    String
+  target    String?
+  detail    Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

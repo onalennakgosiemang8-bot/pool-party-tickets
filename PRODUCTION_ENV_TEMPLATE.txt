@@ -1,0 +1,26 @@
+# The Parks — production environment checklist
+# Do NOT commit real values to GitHub.
+
+DATABASE_URL="postgresql://...direct-postgres-connection...?sslmode=require"
+NEXT_PUBLIC_SITE_URL="https://your-domain.co.za"
+
+SESSION_SECRET="<random 64-hex-character value>"
+TICKET_SIGNING_SECRET="<different random 64-hex-character value>"
+CRON_SECRET="<random 64-hex-character value>"
+
+PAYMENT_PROVIDER="payfast"
+PAYFAST_MODE="sandbox"
+PAYFAST_MERCHANT_ID="<sandbox-or-live-merchant-id>"
+PAYFAST_MERCHANT_KEY="<sandbox-or-live-merchant-key>"
+PAYFAST_PASSPHRASE="<your-passphrase-if-used>"
+
+EMAIL_MODE="test"
+EMAIL_PROVIDER="resend"
+EMAIL_API_KEY="<email-provider-api-key>"
+EMAIL_FROM="The Parks Splash <tickets@your-domain.co.za>"
+EMAIL_REPLY_TO="<organiser-email>"
+
+RESERVATION_HOLD_MINUTES="15"
+
+# ADMIN_EMAIL / ADMIN_PASSWORD are only needed when running the seed locally
+# against the production database. Prefer npm run admin:create afterwards.
