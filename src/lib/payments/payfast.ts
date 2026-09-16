@@ -85,14 +85,17 @@ export const payfast: PaymentProvider = {
       amount: (req.amountCents / 100).toFixed(2),
       item_name: req.itemName.slice(0, 100),
       item_description: req.itemDescription.slice(0, 255),
-      email_confirmation: '1',
-      confirmation_address: req.email,
-      // Our own reference, echoed back untouched on the ITN. Useful on the
-      // PayFast dashboard and on the guest's bank statement narrative.
+      // Our own reference, echoed back untouched on the ITN.
       custom_str1: req.ticketNumber,
       custom_str2: req.guestName.slice(0, 255),
+      email_confirmation: '1',
+      confirmation_address: req.email,
     };
-
+for (const k of Object.keys(fields)) {
+      const v = (fields[k] ?? '').trim();
+      if (v) fields[k] = v;
+      else delete fields[k];
+    }
     fields.signature = generateSignature(fields, cfg.passphrase);
 
     return { url: HOSTS[cfg.mode].process, fields, method: 'POST' };
