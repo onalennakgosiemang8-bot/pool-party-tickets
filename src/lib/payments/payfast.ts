@@ -113,7 +113,14 @@ for (const k of Object.keys(fields)) {
 
     // 1 — signature over the fields in the order PayFast sent them.
     const received = data.signature ?? '';
-    const expected = generateSignature(data, cfg.passphrase, order);
+    const rawPayload = body
+      .split('&')
+      .filter((p) => !p.startsWith('signature='))
+      .join('&');
+    const signedPayload = cfg.passphrase
+      ? `${rawPayload}&passphrase=${pfEncode(cfg.passphrase)}`
+      : rawPayload;
+    const expected = createHash('md5').update(signedPayload).digest('hex');
     if (!received || !safeEqual(received, expected)) {
       return { status: 'rejected', reason: 'Signature mismatch' };
     }
